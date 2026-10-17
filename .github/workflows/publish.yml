@@ -1,0 +1,105 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, e.g. mcp-v10.14.0 or mcp-core@v10.14.0
+        required: true
+        type: string
+
+concurrency:
+  group: publish-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  meta:
+    name: Resolve release
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'mcp-v') || startsWith(github.event.release.tag_name, 'mcp-core@v')
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - id: meta
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          case "$TAG" in
+            mcp-v*)
+              version="${TAG#mcp-v}"
+              image=true
+              ;;
+            mcp-core@v*)
+              version="${TAG#mcp-core@v}"
+              image=false
+              ;;
+            *)
+              echo "tag must start with mcp-v or mcp-core@v, got $TAG" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "tag=$TAG"
+            echo "version=$version"
+            echo "image=$image"
+          } >> "$GITHUB_OUTPUT"
+
+  publish-npm:
+    name: Publish npm
+    needs: meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ needs.meta.outputs.tag }}
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Publish
+        run: |
+          packdir="$RUNNER_TEMP/pack"
+          for dir in mcp-core mcp; do
+            name=$(node -p "require('./packages/$dir/package.json').name")
+            version=$(node -p "require('./packages/$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version already on npm, skipping"
+              continue
+            fi
+            rm -rf "$packdir" && mkdir -p "$packdir"
+            (cd "packages/$dir" && pnpm pack --pack-destination "$packdir")
+            npx --yes npm@11 publish "$packdir"/*.tgz --access public
+          done
+
+  publish-ghcr:
+    name: Publish GHCR image
+    needs: meta
+    if: needs.meta.outputs.image == 'true'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
+    uses: FerrLabs/.github/.github/workflows/reusable-docker-build.yml@9796e976e6b1a071578aed08b164fb483bf01a86 # main
+    with:
+      image-name: ghcr.io/ferrlabs/mcp
+      tag: ${{ needs.meta.outputs.version }}
+      context: .
+      dockerfile: Dockerfile
+      build-args: PACKAGE=@ferrlabs/mcp
+      platforms: linux/amd64
+      ref: ${{ needs.meta.outputs.tag }}
