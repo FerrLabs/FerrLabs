@@ -180,7 +180,6 @@ export async function runLoopbackOauthFlow(): Promise<RunLoopbackFlowResult> {
   const bindErrors: Array<{ port: number; error: string }> = [];
   for (const candidate of REDIRECT_PORTS) {
     try {
-      // eslint-disable-next-line no-await-in-loop -- intentional: probe ports sequentially
       bound = await bindCallbackListener(candidate, state);
       break;
     } catch (err) {
