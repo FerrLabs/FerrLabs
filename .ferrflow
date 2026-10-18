@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ferrflow.com/schema/ferrflow.json",
+  "workspace": {
+    "releaseCommitBody": "full"
+  },
+  "package": [
+    {
+      "name": "mcp-core",
+      "path": "packages/mcp-core",
+      "tagTemplate": "mcp-core@v{version}",
+      "versionedFiles": [{ "path": "packages/mcp-core/package.json", "format": "json" }]
+    },
+    {
+      "name": "mcp",
+      "path": "packages/mcp",
+      "tagTemplate": "mcp-v{version}",
+      "changelog": "packages/mcp/CHANGELOG.md",
+      "dependsOn": ["mcp-core"],
+      "versionedFiles": [{ "path": "packages/mcp/package.json", "format": "json" }]
+    }
+  ]
+}
