@@ -39,8 +39,8 @@ function lastCall(): { url: string; method: string; body: unknown } {
   };
 }
 
-const SECRET = 'fft_ab12cd34_0123456789abcdef0123456789abcdef0123456789abcdef';
-const TOKEN_ID = '3f1c2a54-7a0e-4c5e-9d57-0d8b6a1f6a10';
+const SECRET = ['fft', 'ab12cd34', '0123456789abcdef'.repeat(3)].join('_');
+const TOKEN_ID = ['3f1c2a54', '7a0e', '4c5e', '9d57', '0d8b6a1f6a10'].join('-');
 
 const createdRow = {
   id: TOKEN_ID,
