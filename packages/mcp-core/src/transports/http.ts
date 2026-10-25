@@ -275,7 +275,10 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<Server> 
             return;
           }
           const tooLarge = err instanceof PayloadTooLargeError;
-          res.writeHead(tooLarge ? 413 : 500, { 'Content-Type': 'application/json' });
+          res.writeHead(tooLarge ? 413 : 500, {
+            'Content-Type': 'application/json',
+            ...(tooLarge ? { Connection: 'close' } : {}),
+          });
           res.end(
             JSON.stringify({
               error: tooLarge ? 'Payload too large' : 'Internal server error',

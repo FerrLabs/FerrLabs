@@ -107,7 +107,10 @@ describe('startHttpServer', () => {
     return (server.address() as AddressInfo).port;
   }
 
-  function initialize(port: number, rawBody?: string): Promise<{ status: number; body: string }> {
+  function initialize(
+    port: number,
+    rawBody?: string,
+  ): Promise<{ status: number; body: string; connection?: string }> {
     const payload =
       rawBody ??
       JSON.stringify({
@@ -137,7 +140,9 @@ describe('startHttpServer', () => {
           let body = '';
           res.setEncoding('utf8');
           res.on('data', (c: string) => (body += c));
-          res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+          res.on('end', () =>
+            resolve({ status: res.statusCode ?? 0, body, connection: res.headers.connection }),
+          );
         },
       );
       req.on('error', reject);
@@ -167,6 +172,7 @@ describe('startHttpServer', () => {
     const port = await start(false);
     const res = await initialize(port, 'x'.repeat(1_000_001));
     expect(res.status).toBe(413);
+    expect(res.connection).toBe('close');
     expect(res.body).not.toContain('byte limit');
     expect(serversCreated).toBe(0);
   });
