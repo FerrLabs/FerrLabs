@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { startHttpServer } from './transports/http.js';
+import { shutdownHttpServer } from './transports/shutdown.js';
 import { startStdioServer } from './transports/stdio.js';
 
 export interface RunMcpOptions {
@@ -25,13 +26,18 @@ export async function runMcp(opts: RunMcpOptions): Promise<void> {
     process.env.FERRLABS_MCP_MODE ?? (process.argv.includes('--http') ? 'http' : 'stdio');
 
   if (mode === 'http') {
-    await startHttpServer({
+    const httpServer = await startHttpServer({
       port: Number(process.env.PORT ?? '3000'),
       host: process.env.HOST,
       stateless: process.env.FERRLABS_MCP_STATEFUL !== '1',
       requireBearer: opts.requireBearer,
       createServer: () => buildServer(opts),
     });
+    for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+      process.once(signal, () => {
+        void shutdownHttpServer(httpServer).then(() => process.exit(0));
+      });
+    }
     return;
   }
 
