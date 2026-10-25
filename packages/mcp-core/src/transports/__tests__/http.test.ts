@@ -90,28 +90,36 @@ describe('startHttpServer', () => {
     server = undefined;
   });
 
+  let serversCreated = 0;
+
   async function start(requireBearer?: boolean): Promise<number> {
+    serversCreated = 0;
     server = await startHttpServer({
       port: 0,
       host: '127.0.0.1',
       publicUrl: 'https://mcp.ferrlabs.test',
-      createServer: () => new McpServer({ name: 'test', version: '0.0.0' }),
+      createServer: () => {
+        serversCreated += 1;
+        return new McpServer({ name: 'test', version: '0.0.0' });
+      },
       requireBearer,
     });
     return (server.address() as AddressInfo).port;
   }
 
-  function initialize(port: number): Promise<{ status: number; body: string }> {
-    const payload = JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2025-03-26',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.0' },
-      },
-    });
+  function initialize(port: number, rawBody?: string): Promise<{ status: number; body: string }> {
+    const payload =
+      rawBody ??
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'test', version: '0.0.0' },
+        },
+      });
     return new Promise((resolve, reject) => {
       const req = request(
         {
@@ -141,6 +149,26 @@ describe('startHttpServer', () => {
     const port = await start();
     const res = await initialize(port);
     expect(res.status).toBe(401);
+  });
+
+  it('answers invalid JSON with 400 and a JSON-RPC parse error, without building a server', async () => {
+    const port = await start(false);
+    const res = await initialize(port, '{not json');
+    expect(res.status).toBe(400);
+    expect(JSON.parse(res.body)).toEqual({
+      jsonrpc: '2.0',
+      error: { code: -32700, message: 'Parse error' },
+      id: null,
+    });
+    expect(serversCreated).toBe(0);
+  });
+
+  it('answers an oversized body with 413, without building a server or leaking details', async () => {
+    const port = await start(false);
+    const res = await initialize(port, 'x'.repeat(1_000_001));
+    expect(res.status).toBe(413);
+    expect(res.body).not.toContain('byte limit');
+    expect(serversCreated).toBe(0);
   });
 
   it('serves an MCP request without a bearer when the server opts out of requiring one', async () => {
