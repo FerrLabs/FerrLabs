@@ -1,6 +1,6 @@
 import type { Server } from 'node:http';
 
-export const SHUTDOWN_TIMEOUT_MS = 10_000;
+const SHUTDOWN_TIMEOUT_MS = 10_000;
 
 export function shutdownHttpServer(
   server: Server,
