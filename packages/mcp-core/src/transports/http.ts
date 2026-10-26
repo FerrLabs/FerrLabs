@@ -79,6 +79,13 @@ export interface HttpServerOptions {
   authorizationServer?: string;
 }
 
+class InvalidJsonError extends Error {
+  constructor() {
+    super('Request body is not valid JSON');
+    this.name = 'InvalidJsonError';
+  }
+}
+
 class PayloadTooLargeError extends Error {
   constructor() {
     super(`Request body exceeds the ${MAX_BODY_BYTES}-byte limit`);
@@ -94,7 +101,6 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown | undefined> 
     req.on('data', (c: Buffer) => {
       total += c.length;
       if (total > MAX_BODY_BYTES) {
-        req.destroy();
         reject(new PayloadTooLargeError());
         return;
       }
@@ -105,8 +111,8 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown | undefined> 
       if (!raw) return resolve(undefined);
       try {
         resolve(JSON.parse(raw));
-      } catch (err) {
-        reject(err);
+      } catch {
+        reject(new InvalidJsonError());
       }
     });
     req.on('error', reject);
@@ -176,6 +182,8 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<Server> 
       return;
     }
 
+    const body = await readJsonBody(req);
+
     // In stateless mode nothing ever retains what we build here, so the pair
     // has to be torn down once the response is written. Left alone, every
     // request adds an McpServer and a transport that live until the process
@@ -201,7 +209,6 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<Server> 
       if (stateless) disposable = { server, transport };
     }
 
-    const body = await readJsonBody(req);
     try {
       await runWithAuthContext({ bearerToken }, () => transport.handleRequest(req, res, body));
     } finally {
@@ -256,9 +263,27 @@ export async function startHttpServer(opts: HttpServerOptions): Promise<Server> 
     if (url === '/mcp' || url.startsWith('/mcp?')) {
       handleMcpRequest(req, res).catch((err) => {
         if (!res.headersSent) {
-          const status = err instanceof PayloadTooLargeError ? 413 : 500;
-          res.writeHead(status, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+          if (err instanceof InvalidJsonError) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                error: { code: -32700, message: 'Parse error' },
+                id: null,
+              }),
+            );
+            return;
+          }
+          const tooLarge = err instanceof PayloadTooLargeError;
+          res.writeHead(tooLarge ? 413 : 500, {
+            'Content-Type': 'application/json',
+            ...(tooLarge ? { Connection: 'close' } : {}),
+          });
+          res.end(
+            JSON.stringify({
+              error: tooLarge ? 'Payload too large' : 'Internal server error',
+            }),
+          );
         } else {
           res.end();
         }
