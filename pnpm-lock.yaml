@@ -202,7 +202,7 @@ importers:
         specifier: workspace:*
         version: link:../mcp-core
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.0
+        specifier: ^1.32.2
         version: 1.32.2(zod@4.6.7)
       zod:
         specifier: ^4.3.6
@@ -211,7 +211,7 @@ importers:
   packages/mcp-core:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.0
+        specifier: ^1.32.2
         version: 1.32.2(zod@4.6.7)
 
 packages:
