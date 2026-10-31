@@ -4,6 +4,12 @@ All notable changes to `mcp` will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [10.13.1] - 2026-10-31
+
+### Bug Fixes
+
+- fix(mcp-core): real user agent, body read timeout, sdk floor and fft_ token prefix (#30)
+
 ## [10.13.0] - 2026-10-14
 
 ### Features
