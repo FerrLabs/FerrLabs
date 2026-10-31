@@ -35,7 +35,7 @@ Bypass the browser flow by injecting a token directly:
     "ferrlabs": {
       "command": "npx",
       "args": ["-y", "@ferrlabs/mcp"],
-      "env": { "FERRLABS_API_TOKEN": "fl_..." }
+      "env": { "FERRLABS_API_TOKEN": "fft_..." }
     }
   }
 }

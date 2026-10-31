@@ -13,7 +13,7 @@ export async function getToken(): Promise<string> {
   if (perRequest) return perRequest;
 
   if (process.env.FERRLABS_MCP_MODE === 'http') {
-    throw new Error('Bearer token required. Send `Authorization: Bearer fl_...` on each request.');
+    throw new Error('Bearer token required. Send `Authorization: Bearer fft_...` on each request.');
   }
 
   if (cached) return cached;

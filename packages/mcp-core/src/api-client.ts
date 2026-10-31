@@ -1,5 +1,8 @@
 import { invalidateToken } from './auth/index.js';
 import { fetchWithTimeout } from './http.js';
+import { readPackageVersion } from './version.js';
+
+const USER_AGENT = `ferrlabs-mcp/${readPackageVersion(import.meta.url)}`;
 
 const DEFAULT_API_URL = process.env.API_URL ?? 'https://api.ferrlabs.com';
 
@@ -112,7 +115,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const isFormData = body instanceof FormData;
   const headers: Record<string, string> = {
-    'User-Agent': 'ferrlabs-mcp/4.0.0',
+    'User-Agent': USER_AGENT,
   };
   if (!isFormData) headers['Content-Type'] = 'application/json';
 

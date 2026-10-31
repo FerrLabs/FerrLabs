@@ -38,14 +38,39 @@ describe('fetchWithTimeout', () => {
   });
 
   it('passes the signal through and returns the response on success', async () => {
-    const ok = { ok: true } as Response;
     const seen: { signal?: AbortSignal } = {};
     vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
       seen.signal = init.signal ?? undefined;
-      return Promise.resolve(ok);
+      return Promise.resolve(new Response('{"a":1}', { status: 201 }));
     });
 
-    await expect(fetchWithTimeout('https://example.test')).resolves.toBe(ok);
+    const res = await fetchWithTimeout('https://example.test');
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({ a: 1 });
     expect(seen.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('times out when the body stalls after headers arrive', async () => {
+    vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
+      const stream = new ReadableStream({
+        start(controller) {
+          init.signal?.addEventListener('abort', () =>
+            controller.error(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+          );
+        },
+      });
+      return Promise.resolve(new Response(stream));
+    });
+
+    const res = await fetchWithTimeout('https://example.test', {}, 10);
+    await expect(res.text()).rejects.toThrow(/timed out/);
+  });
+
+  it('keeps a 204 response bodiless', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(null, { status: 204 })));
+
+    const res = await fetchWithTimeout('https://example.test');
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
   });
 });
