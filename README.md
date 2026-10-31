@@ -1,6 +1,20 @@
-# FerrLabs
+<div align="center">
 
-The unified FerrLabs MCP server and the shared core every FerrLabs MCP server is built on.
+<h1><img src=".github/logo.svg" alt="" width="48" height="48" align="absmiddle"> FerrLabs</h1>
+
+**The unified FerrLabs MCP server and the shared core every FerrLabs MCP server is built on.**
+
+MCP servers for `api.ferrlabs.com`: organizations, teams, billing, profile, tokens and docs.
+
+[![npm @ferrlabs/mcp](https://img.shields.io/npm/v/@ferrlabs/mcp)](https://www.npmjs.com/package/@ferrlabs/mcp)
+[![CI](https://github.com/FerrLabs/FerrLabs/actions/workflows/ci.yml/badge.svg)](https://github.com/FerrLabs/FerrLabs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/FerrLabs/FerrLabs)](LICENSE)
+
+[ferrlabs.com](https://ferrlabs.com) | [npm](https://www.npmjs.com/package/@ferrlabs/mcp)
+
+</div>
+
+Install and configure the server from [`packages/mcp/README.md`](packages/mcp/README.md).
 
 | Directory                                | Package                                                                  | What                                                                                            |
 | ---------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
