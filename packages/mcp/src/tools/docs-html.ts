@@ -42,6 +42,7 @@ function decodeEntities(text: string): string {
     if (body[0] === '#') {
       const code =
         body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : Number(body.slice(1));
+      if (code === 0) return '\ufffd';
       return Number.isFinite(code) && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
     }
     return NAMED_ENTITIES[body.toLowerCase()] ?? entity;
@@ -64,7 +65,7 @@ const BLOCK_TAGS =
 
 export function htmlToText(html: string): string {
   const blocks: string[] = [];
-  let out = html.replace(/<!--[\s\S]*?-->/g, '');
+  let out = html.replace(/\u0000/g, '').replace(/<!--[\s\S]*?-->/g, '');
   for (const tag of DROPPED_ELEMENTS) {
     out = out.replace(new RegExp(`<${tag}\\b[\\s\\S]*?</${tag}>`, 'gi'), '');
   }
