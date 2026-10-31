@@ -64,7 +64,7 @@ const BLOCK_TAGS =
 
 export function htmlToText(html: string): string {
   const blocks: string[] = [];
-  let out = html.replace(/<!--[\s\S]*?-->/g, '');
+  let out = html.replace(/\u0000/g, '').replace(/<!--[\s\S]*?-->/g, '');
   for (const tag of DROPPED_ELEMENTS) {
     out = out.replace(new RegExp(`<${tag}\\b[\\s\\S]*?</${tag}>`, 'gi'), '');
   }
