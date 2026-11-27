@@ -23,7 +23,7 @@ jobs:
       pull-requests: write
       packages: read
     name: Test
-    uses: FerrLabs/.github/.github/workflows/reusable-ci-node.yml@0a075f35954063ac01310b4e01543fd7009916e4 # main
+    uses: FerrLabs/.github/.github/workflows/reusable-ci-node.yml@47ce918cb6fcd25f410d6e8155cba963d660a13f # main
     with:
       node-version: '24'
       pnpm-version: ''
@@ -46,7 +46,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    uses: FerrLabs/.github/.github/workflows/reusable-ferrflow-release.yml@0a075f35954063ac01310b4e01543fd7009916e4 # main
+    uses: FerrLabs/.github/.github/workflows/reusable-ferrflow-release.yml@47ce918cb6fcd25f410d6e8155cba963d660a13f # main
     with:
       dry-run: ${{ inputs.dry_run || false }}
     secrets:
